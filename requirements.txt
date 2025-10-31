@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+numpy
+pydantic
+sentence-transformers
+datapizza-ai
+datapizza-ai-clients-openai
+python-dotenv
