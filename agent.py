@@ -1,4 +1,9 @@
 import os
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv(), override=True)  # carica .env ovunque giri l'import
+
+print("[DBG] OPENAI_API_KEY prefix:",
+      (os.getenv("OPENAI_API_KEY") or "")[:12])  # stampa 'sk-...' troncato
 from typing import List, Dict
 from retriever import Retriever
 
