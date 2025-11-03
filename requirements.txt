@@ -1,9 +1,8 @@
-fastapi>=0.115
-uvicorn>=0.30
-pydantic>=2.8
-numpy>=1.26
-sentence-transformers>=3.0
-datapizza-ai>=0.0.7
-datapizza-ai-clients-openai>=0.0.3
+fastapi==0.120.*
+uvicorn==0.38.*
 python-dotenv>=1.0
+datapizza-ai>=0.0.7
+numpy>=1.26
+gunicorn>=21.2
+
 
