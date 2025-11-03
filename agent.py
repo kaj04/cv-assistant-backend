@@ -9,7 +9,7 @@ print("[DBG] OPENAI_API_KEY prefix:", (os.getenv("OPENAI_API_KEY") or "")[:12])
 from datapizza.agents import Agent
 from datapizza.clients.openai import OpenAIClient
 from datapizza.tools import tool
-# Tracing dettagliato disattivato per risparmiare RAM su Render Free.
+# Tracing ricco disattivato per RAM su Render/locale.
 # from datapizza.tracing import ContextTracing
 
 from retriever import get_retriever
@@ -40,8 +40,8 @@ def get_candidate_context(question: str) -> str:
     """
     Retrieve relevant knowledge chunks from vectors.json via cached Retriever.
     """
-    retriever = get_retriever(vectors_path="vectors.json")  # <— cache globale
-    top_chunks = retriever.retrieve(question, top_k=3)      # 3 basta e riduce RAM
+    retriever = get_retriever(vectors_path="vectors.json")
+    top_chunks = retriever.retrieve(question, top_k=3)
 
     parts: List[str] = []
     for c in top_chunks:
@@ -74,11 +74,10 @@ def build_agent() -> Agent:
 def answer_question(user_question: str) -> Dict[str, object]:
     agent = build_agent()
 
-    # Esegui senza tracing "ricco" (meno RAM su Render Free)
+    # senza tracing "ricco"
     agent_response = agent.run(user_question)
     final_answer_text = getattr(agent_response, "text", str(agent_response))
 
-    # Sorgenti per la risposta HTTP (riusa retriever in cache)
     retriever = get_retriever(vectors_path="vectors.json")
     top_chunks = retriever.retrieve(user_question, top_k=3)
 
