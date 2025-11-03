@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv, find_dotenv
+from sentence_transformers import SentenceTransformer
 
 # ---- Env ----
 load_dotenv(find_dotenv(), override=True)
@@ -34,21 +35,26 @@ except Exception as e:
         raise RuntimeError("agent.answer_question non disponibile")
 
 # ---- App ----
-app = FastAPI(title="Ask My CV - Backend", version="1.0.0")
+app = FastAPI()
+app.state.embedder = None
 
-origins = [
-    "http://localhost:1313",
-    "http://localhost:3000",
-    "https://<TUO-USERNAME>.github.io",
-    "https://<TUO-DOMINIO>",
-]
+@app.on_event("startup")
+def load_model_once():
+    if app.state.embedder is None:
+        # modello leggero; caricato una sola volta
+        app.state.embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+# ---- CORS (GitHub Pages) ----
+# Origin del tuo sito: https://kaj04.github.io  (niente path)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["https://kaj04.github.io"],
+    allow_credentials=False,                   # non usi cookie/sessioni
+    allow_methods=["GET", "POST", "OPTIONS"],  # espliciti per il preflight
+    allow_headers=["*"],                       # o ["content-type", "authorization"]
 )
 
+# ---- Routes ----
 @app.get("/")
 def root():
     return {"ok": True, "service": "ask-my-cv"}
@@ -60,7 +66,7 @@ def health():
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(q: ChatQuery):
     try:
-        result = answer_question(q.question)  # dict con answer/sources/question
+        result = answer_question(q.question)  # dict con answer/sources
         return {
             "answer": result["answer"],
             "sources": result.get("sources", []),
