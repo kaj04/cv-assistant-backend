@@ -60,10 +60,10 @@ def health():
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(q: ChatQuery):
     try:
-        result = answer_question(q.question)  # <-- dict con answer/sources/question
+        result = answer_question(q.question)  # dict con answer/sources/question
         return {
             "answer": result["answer"],
-            "sources": result.get("sources", []),  # lista di SourceItem
+            "sources": result.get("sources", []),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
