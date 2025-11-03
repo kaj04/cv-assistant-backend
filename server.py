@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional, Union
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv, find_dotenv
@@ -26,7 +26,7 @@ class ChatResponse(BaseModel):
     answer: str
     sources: Optional[List[SourceItem]] = None
 
-# ---- Importa l'agente dopo il load_dotenv ----
+# ---- Import dinamico dell'agente dopo il load_dotenv ----
 try:
     from agent import answer_question  # deve esistere
 except Exception as e:
@@ -48,11 +48,17 @@ def load_model_once():
 # Origin del tuo sito: https://kaj04.github.io  (niente path)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://kaj04.github.io"],
-    allow_credentials=False,                   # non usi cookie/sessioni
-    allow_methods=["GET", "POST", "OPTIONS"],  # espliciti per il preflight
-    allow_headers=["*"],                       # o ["content-type", "authorization"]
+    allow_origin_regex=r"^https://kaj04\.github\.io$",  # match esatto dell'origin
+    allow_credentials=False,                            # niente cookie/sessioni
+    allow_methods=["GET", "POST", "OPTIONS"],           # espliciti
+    allow_headers=["*"],                                # es. "content-type"
+    max_age=86400,                                      # cache del preflight (opzionale)
 )
+
+# Preflight esplicito: alcuni proxy restituiscono 400 se l'endpoint non esiste
+@app.options("/api/chat")
+def options_chat():
+    return Response(status_code=200)
 
 # ---- Routes ----
 @app.get("/")
