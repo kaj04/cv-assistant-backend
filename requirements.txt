@@ -8,6 +8,8 @@ uvicorn==0.38.*
 python-dotenv>=1.0
 numpy>=1.26
 gunicorn>=21.2
+datapizza-ai>=0.0.7
+datapizza-ai-clients-openai>=0.0.7
 
 
 
