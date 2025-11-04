@@ -13,7 +13,7 @@ _RETRIEVER_SINGLETON = None
 
 class Retriever:
     """
-    Semantic retriever for Francesco Colasurdo's CV Assistant.
+    Semantic retriever for CV Assistant.
 
     - Loads vectors.json once.
     - Loads SentenceTransformer model once.
@@ -21,39 +21,37 @@ class Retriever:
     """
 
     def __init__(self, vectors_path: str = "vectors.json"):
-        # Import locale: avvio più rapido
         from sentence_transformers import SentenceTransformer
 
         if not os.path.exists(vectors_path):
             raise FileNotFoundError(f"Cannot find {vectors_path}. Run build_index.py first.")
 
-        # Carica indice: lista di dict {text, embedding, source, chunk_id}
         with open(vectors_path, "r", encoding="utf-8") as f:
             self.index: List[Dict[str, Any]] = json.load(f)
 
-        # Matrice embeddings float32
+        # Matrix of float32 embeddings
         embs = np.asarray([entry["embedding"] for entry in self.index], dtype=np.float32)
 
-        # Normalizza (cosine = dot)
+        # Normalize (cosine = dot)
         norms = np.linalg.norm(embs, axis=1, keepdims=True) + 1e-12
         self.embeddings_matrix = (embs / norms).astype(np.float32)
 
-        # Cache campi testuali/metadata per evitare lookup ripetuti
+        # Cache text/metadata to avoid repeated lookups
         self.texts = [e["text"] for e in self.index]
         self.sources = [e.get("source", "") for e in self.index]
         self.chunk_ids = [e.get("chunk_id", "") for e in self.index]
 
-        # Modello CPU-only
+        # CPU-only model
         self.model = SentenceTransformer(EMBEDDING_MODEL_NAME, device="cpu")
 
     def _embed_text(self, text: str) -> np.ndarray:
-        # Ritorna vettore normalizzato float32
+        # Returns normalized float32 vector
         vec = self.model.encode([text], show_progress_bar=False, normalize_embeddings=True)
         return np.asarray(vec[0], dtype=np.float32)
 
     def retrieve(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
-        q = self._embed_text(query)  # già normalizzato
-        sims = self.embeddings_matrix @ q  # (N, D) · (D,) -> (N,)
+        q = self._embed_text(query)  
+        sims = self.embeddings_matrix @ q  
         idx = np.argsort(-sims)[:top_k]
 
         out: List[Dict[str, Any]] = []
