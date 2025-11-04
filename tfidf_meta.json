@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "doc_ids": [
+    "about_me.md#0",
+    "about_me.md#1",
+    "about_me.md#2",
+    "about_me.md#3",
+    "courses.md#0",
+    "courses.md#1",
+    "courses.md#2",
+    "courses.md#3",
+    "cv.md#0",
+    "cv.md#1",
+    "cv.md#2",
+    "projects.md#0",
+    "projects.md#1",
+    "skills.md#0",
+    "skills.md#1",
+    "thesis.md#0",
+    "thesis.md#1",
+    "thesis.md#2"
+  ],
+  "num_docs": 18,
+  "vocabulary_size": 5204,
+  "ngram_range": [
+    1,
+    2
+  ],
+  "stop_words": "english",
+  "max_df": 0.9,
+  "min_df": 1,
+  "source": "vectors.json",
+  "note": "Parallel TF-IDF index for hybrid retrieval."
+}
