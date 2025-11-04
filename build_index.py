@@ -8,13 +8,14 @@ from sentence_transformers import SentenceTransformer
 
 def load_documents(data_dir: str = "data") -> List[Dict[str, str]]:
     """
-    Legge tutti i file .md nella cartella data/ e restituisce una lista di
-    {"source": nome_file, "text": contenuto}.
+    Reads all .md files from the data/ directory and returns a list of
+    {"source": file_name, "text": content}.
 
-    Motivazione tecnica:
-    - Questa funzione è lo "ingestion layer": è il punto unico dove dichiariamo
-      qual è la knowledge base ufficiale del candidato.
-    - Se un domani vuoi escludere un file (es. info troppo private), lo fai qui.
+    Technical rationale:
+    - This function acts as the "ingestion layer": it defines the single entry point
+    for declaring what constitutes the candidate's official knowledge base.
+    -If a file needs to be excluded in the future (e.g., contains private information),
+    the change should be made here.
     """
     documents = []
 
@@ -23,7 +24,7 @@ def load_documents(data_dir: str = "data") -> List[Dict[str, str]]:
         with open(filepath, "r", encoding="utf-8") as f:
             text = f.read()
 
-        # normalizzazione base: togliamo spazi doppi e righe vuote inutili
+        # basic normalization: remove triple newlines and unnecessary empty lines
         cleaned = re.sub(r"\n{3,}", "\n\n", text).strip()
 
         documents.append({
@@ -40,18 +41,17 @@ def chunk_text(
     overlap_tokens: int = 50
 ) -> List[str]:
     """
-    Spezza il testo in chunk sovrapposti.
+    Splits the text into overlapping chunks.
 
-    Nota tecnica:
-    - max_tokens qui è "circa parole", non veri token LLM.
-      Va bene per MVP perché ti basta avere blocchi di dimensione ragionevole.
-    - overlap_tokens serve per non perdere contesto tra un chunk e l'altro.
+    Technical notes:
+    - max_tokens here is "about words", not actual LLM tokens.
+      It's fine for MVP because you only need reasonably sized blocks.
+    - overlap_tokens is used to avoid losing context between chunks.
 
-    Ritorna una lista di stringhe (ogni stringa = chunk).
+    Returns a list of strings (each string = chunk).
     """
 
-    # Semplice split in "parole" per stimare i token.
-    # In futuro potresti sostituire questo con un vero tokenizer del modello.
+    # Simple split in "words" to estimate tokens.
     words = text.split()
 
     chunks = []
@@ -65,9 +65,9 @@ def chunk_text(
         if chunk_text:
             chunks.append(chunk_text)
 
-        # Applichiamo l'overlap:
-        # Il prossimo chunk ricomincia "overlap_tokens" parole prima della fine
-        # del chunk precedente, così non spezzi concetti importanti.
+        # Apply overlap:
+        # The next chunk starts "overlap_tokens" words before the end
+        # of the previous chunk, so we don't split important concepts.
         start = end - overlap_tokens
 
         if start < 0:
@@ -81,19 +81,18 @@ def chunk_text(
 
 def build_chunks(documents: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """
-    Per ogni documento caricato, genera i chunk e aggiunge metadati.
+    For each loaded document, generates chunks and adds metadata.
 
-    Ritorna una lista di dizionari tipo:
+    Returns a list of dictionaries like:
     {
       "source": "thesis_project.md",
       "chunk_id": "thesis_project.md#0",
       "text": "During my internship at NTT Data I..."
     }
 
-    Motivazione tecnica:
-    - Avere chunk_id ti permette domani (nel retriever e nella risposta API)
-      di dire da dove arriva l'informazione. Questo è utile per trasparenza
-      verso il recruiter e per debug tuo.
+    Technical rationale:
+    - Having chunk_id allows in the retriever and API response to say where the information comes from.
+      This is useful for transparency towards the recruiter and for your own debugging.
     """
 
     all_chunks = []
@@ -119,43 +118,43 @@ def embed_chunks(
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
 ) -> List[Dict[str, object]]:
     """
-    Genera l'embedding vettoriale per ogni chunk.
+    Generates the vector embedding for each chunk.
 
-    - Carichiamo un modello di embedding tipo all-MiniLM-L6-v2
-      (piccolo, veloce, perfetto per MVP).
-    - Per ogni chunk["text"], otteniamo un vettore numerico.
-    - Salviamo quel vettore assieme al testo e ai metadati.
+    - Load an embedding model like all-MiniLM-L6-v2
+      (small, fast, perfect for MVP).
+    - For each chunk["text"], we get a numerical vector.
+    - Save that vector together with the text and metadata.
 
-    Ritorno: lista di dict
+    Returns: list of dictionaries
     {
       "source": "thesis_project.md",
       "chunk_id": "thesis_project.md#0",
       "text": "...",
-      "embedding": [0.012, -0.034, ...]  # lista di float
+      "embedding": [0.012, -0.034, ...]  # list of floats
     }
 
-    Motivazione tecnica:
-    - Questo output è esattamente quello che salverai in vectors.json
-      e che verrà interrogato domani dal retriever usando cosine similarity.
+    Technical rationale:
+    - This output is exactly what you will save in vectors.json
+      and that will be queried by the retriever using cosine similarity.
     """
 
     print(f"[INFO] Loading embedding model: {model_name}")
     model = SentenceTransformer(model_name)
 
-    # Estraggo solo il testo dei chunk
+    # Extract only the text from the chunks
     chunk_texts = [c["text"] for c in chunks]
 
     print("[INFO] Computing embeddings for all chunks...")
     embeddings = model.encode(chunk_texts, show_progress_bar=True)
 
-    # Combina embeddings + metadati
+    # Combine embeddings + metadata
     vector_entries = []
     for c, emb in zip(chunks, embeddings):
         vector_entries.append({
             "source": c["source"],
             "chunk_id": c["chunk_id"],
             "text": c["text"],
-            "embedding": emb.tolist()  # numpy -> lista Python serializzabile in JSON
+            "embedding": emb.tolist()
         })
 
     return vector_entries
@@ -163,12 +162,11 @@ def embed_chunks(
 
 def save_vectors(vectors: List[Dict[str, object]], output_path: str = "vectors.json"):
     """
-    Salva la lista di vettori e metadati in un file JSON unico.
+    Saves the list of vectors and metadata in a single JSON file.
 
     Motivazione tecnica:
-    - Questo file è il tuo 'mini vector store'.
-    - Domani il retriever lo caricherà per fare RAG.
-    - È leggibile da umani e semplice da versionare su GitHub.
+    - This file is a 'mini vector store'.
+    - The retriever will load it for RAG.
     """
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(vectors, f, ensure_ascii=False, indent=2)
@@ -178,11 +176,11 @@ def save_vectors(vectors: List[Dict[str, object]], output_path: str = "vectors.j
 
 def main():
     """
-    Esegue l'intera pipeline end-to-end:
-    1. Carica i documenti markdown in ./data
-    2. Li spezza in chunk
-    3. Calcola gli embeddings
-    4. Salva tutto in vectors.json
+    Executes the entire end-to-end pipeline:
+    1. Loads the markdown documents in ./data
+    2. Splits them into chunks
+    3. Calculates the embeddings
+    4. Saves everything in vectors.json
     """
 
     print("[STEP 1] Loading markdown documents from ./data ...")
