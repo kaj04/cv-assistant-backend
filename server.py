@@ -11,9 +11,8 @@ from sentence_transformers import SentenceTransformer
 load_dotenv(find_dotenv(), override=True)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    print("[WARN] OPENAI_API_KEY non trovata. Impostarla prima di prod.")
+    print("[WARN] OPENAI_API_KEY not found. Set it before running the server.")
 
-# ---- Modelli (UNICA definizione) ----
 class SourceItem(BaseModel):
     source: str
     chunk_id: Union[int, str]
@@ -26,13 +25,13 @@ class ChatResponse(BaseModel):
     answer: str
     sources: Optional[List[SourceItem]] = None
 
-# ---- Import dinamico dell'agente dopo il load_dotenv ----
+# ---- Dynamic import of the agent after load_dotenv ----
 try:
-    from agent import answer_question  # deve esistere
+    from agent import answer_question 
 except Exception as e:
-    print("[WARN] agent.py non disponibile o con errori:", e)
+    print("[WARN] agent.py not available or with errors:", e)
     def answer_question(q: str):
-        raise RuntimeError("agent.answer_question non disponibile")
+        raise RuntimeError("agent.answer_question not available")
 
 # ---- App ----
 app = FastAPI()
@@ -41,21 +40,19 @@ app.state.embedder = None
 @app.on_event("startup")
 def load_model_once():
     if app.state.embedder is None:
-        # modello leggero; caricato una sola volta
         app.state.embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 # ---- CORS (GitHub Pages) ----
-# Origin del tuo sito: https://kaj04.github.io  (niente path)
+# Your site origin: https://kaj04.github.io  (no path)
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^https://kaj04\.github\.io$",  # match esatto dell'origin
-    allow_credentials=False,                            # niente cookie/sessioni
-    allow_methods=["GET", "POST", "OPTIONS"],           # espliciti
-    allow_headers=["*"],                                # es. "content-type"
-    max_age=86400,                                      # cache del preflight (opzionale)
+    allow_origin_regex=r"^https://kaj04\.github\.io$",  # exact match of the origin
+    allow_credentials=False,                            # no cookies/sessions
+    allow_methods=["GET", "POST", "OPTIONS"],           # explicit
+    allow_headers=["*"],                                # e.g. "content-type"
+    max_age=86400,                                      # preflight cache (optional)
 )
 
-# Preflight esplicito: alcuni proxy restituiscono 400 se l'endpoint non esiste
 @app.options("/api/chat")
 def options_chat():
     return Response(status_code=200)
@@ -72,7 +69,7 @@ def health():
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(q: ChatQuery):
     try:
-        result = answer_question(q.question)  # dict con answer/sources
+        result = answer_question(q.question)
         return {
             "answer": result["answer"],
             "sources": result.get("sources", []),
