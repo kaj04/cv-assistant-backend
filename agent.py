@@ -2,14 +2,14 @@ import os
 from typing import List, Dict
 
 from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv(), override=True)  # carica .env ovunque giri l'import
+load_dotenv(find_dotenv(), override=True)
 
 print("[DBG] OPENAI_API_KEY prefix:", (os.getenv("OPENAI_API_KEY") or "")[:12])
 
 from datapizza.agents import Agent
 from datapizza.clients.openai import OpenAIClient
 from datapizza.tools import tool
-# Tracing ricco disattivato per RAM su Render/locale.
+# Rich tracing disabled for RAM on Render/local.
 # from datapizza.tracing import ContextTracing
 
 from retriever import get_retriever
