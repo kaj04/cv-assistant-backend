@@ -1,12 +1,12 @@
-# 🧠 Ask My CV — Personal RAG Assistant
+# Ask My CV — Personal RAG Assistant
 
 This repository contains the backend for **“Ask My CV”**, an AI assistant that answers questions about me — *as if I were responding in first person* — by retrieving information directly from my real CV and experience.
 
-> 🚀 **Live:** Deployed on [Render](https://render.com) and connected to my personal website, where visitors and recruiters can chat with the assistant.
+> **Live:** Deployed on [Render](https://render.com) and connected to my [personal website](https://kaj04.github.io/Francesco-Colasurdo-Website/), where visitors and recruiters can chat with the assistant.
 
 ---
 
-## 🏗️ How It Works
+## How It Works
 
 1. **Knowledge Base**  
    All my professional information (experience, education, skills, values, projects) lives as markdown files under `/data/*.md`.
@@ -34,7 +34,7 @@ This repository contains the backend for **“Ask My CV”**, an AI assistant th
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 
 | Layer | Technologies |
 |:------|:--------------|
@@ -47,7 +47,7 @@ This repository contains the backend for **“Ask My CV”**, an AI assistant th
 
 ---
 
-## 🎯 Goal
+## Goal
 
 Enable visitors and recruiters to ask natural questions like:
 
@@ -58,6 +58,4 @@ Enable visitors and recruiters to ask natural questions like:
 …and receive honest, first-person answers drawn directly from my verified experience and personal data — *never hallucinated*.
 
 ---
-
-## 🧩 Repository Structure
 
