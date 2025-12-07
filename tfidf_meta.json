@@ -12,6 +12,10 @@
     "cv.md#0",
     "cv.md#1",
     "cv.md#2",
+    "extra_activities.md#0",
+    "extra_activities.md#1",
+    "goals.md#0",
+    "goals.md#1",
     "projects.md#0",
     "projects.md#1",
     "skills.md#0",
@@ -20,8 +24,8 @@
     "thesis.md#1",
     "thesis.md#2"
   ],
-  "num_docs": 18,
-  "vocabulary_size": 5204,
+  "num_docs": 22,
+  "vocabulary_size": 6261,
   "ngram_range": [
     1,
     2
